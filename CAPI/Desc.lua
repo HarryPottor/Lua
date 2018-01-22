@@ -1,12 +1,12 @@
 Desc = [[
- lua_push nil(L)
- lua_push boolean(L, value);
- lua_push number(L, value)
+ lua_pushnil(L)
+ lua_pushboolean(L, value);
+ lua_pushnumber(L, value)
 
- lua_is **(L, index)
+ lua_isnumber(L, index)
 
- lua_to boolean(L, index)
- lua_to integer(L, num);
+ lua_toboolean(L, index)
+ lua_tointeger(L, num);
  
  lua_type(L, index)
  lua_pushvalue(L, index) 将index位置的数据 压入站
@@ -64,4 +64,101 @@ Desc = [[
 4 获取结果 从栈顶
     z = lua_tonumber(L, -1);
     如果返回三个值: 第一个在-3，第二个在-2，第三个在-1
+
+
+Lua 调用C函数的方法:
+在函数中调用C函数：
+lua_State* L = lua_open();
+luaL_openlibs(L);
+luaL_dofile(L, "Config/config.lua");
+lua_register(L, "L_Sin", l_sin); //注册函数，并赋予名字 实际是 lua_pushfunction 和 lua_setglobal 的组合 
+
+*.lua
+    function cfunc(num)
+        return L_Sin(num);
+    end
+
+lua_getglobal(L, "cfunc"); //调用lua的中的函数 cfunc， cfunc函数调用了C函数
+lua_pushnumber(L, 1.57);
+lua_pcall(L, 1, 1, 0);
+
+double res = lua_tonumber(L, -1);
+printf("res = %f\n", res);
+lua_pop(L, 1);
+
+在全局中调用C函数：
+注册完函数之后，需要将文件重新编译一遍。
+lua_register(L, "L_Sin", l_sin);
+-- 重新编译 方法一:
+luaL_dofile(L, "Config/config.lua");
+-- 重新编译 方法二：
+    luaL_loadfile(L, "Config/config.lua");
+    lua_pcall(L, 0, 0, 0);
+
+lua_checknumber(L, index) 检测参数是否是需要的类型，是则返回，不是则报错
+
+
+使用C的模块：
+----------------------------C文件
+#include <stdio.h>
+#include <string.h>
+#include "lua.hpp"
+#include <math.h>
+
+//编写函数 读取参数，结果入栈，返回数量。
+extern "C" int l_sin(lua_State* L)
+{
+    double num = luaL_checknumber(L, 1);
+    lua_pushnumber(L, num*2);
+    return 1;
+}
+
+//创建结构变量 为了注册
+static luaL_Reg mylib[] = 
+{
+    { "mysin", l_sin},
+    {NULL, NULL}
+};
+
+// 模块的入口函数 luaopen_XXX()
+// luaL_register(L, "XXX", mylib);
+//其中XXX为库的名字，require的时候需要用到的。 生成的动态文件DLL文件名，也是XXX
+//这行声明不能少
+extern "C" __declspec(dllexport)
+int luaopen_mydll(lua_State * L)
+{
+    luaL_register(L, "mydll", mylib);
+    return 1;
+}
+
+----------------------------------Lua文件
+require "XXX"
+print("res = ", XXX.mysin(1))
+
+]]
+
+
+Desc = [[
+    table 的 C操作:
+    lua_rawgeti(L, index, key);  将栈中index位置的表数据中的key项 入栈
+        相当于:lua_pushnumber(L, key); lua_rawget(L, t)
+    lua_rawseti(L, index, key);  设置index位置的表的key项数据
+        相当于:lua_pushnumber(L, key); lua_insert(L, -2);lua_rawset(L, t)
+
+    string 的 C操作:
+    lua_pushlstring(L, s+i, j-i+1);     //提取子串区间为[i,j]
+    lua_concat(L, n);       // 连接栈顶的n个值
+    lua_pushfstring(L, "fmt", ...)
+
+    缓冲机制: 使用缓冲时，缓冲会把中间结果放入，不要假设栈顶还是和使用前一样
+    luaL_Buffer b;  创建缓冲
+    luaL_buffinit(L, &b);   缓冲初始化
+    luaL_addchar(&b, ch);   添加数据到缓冲
+    luaL_addlstring(&b, ch);
+    luaL_addstring(&b, ch);
+    luaL_pushresult(&b);    弹出结果
+
+    void luaL_addvalue(&B)   将栈顶的值加入缓冲
+
+
 ]]
