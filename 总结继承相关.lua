@@ -3,6 +3,9 @@ DESC= [[
      2 设置父类变量的写法: parent.func(self, ... )
 
      3  setmetatable只设置了新table的func，在新table中通过self.xxx 可以访问mt中的变量，但一旦在新table中设置了self.xxx = 0 则新table中将拥有xxx变量，
+     4 如果 创建对象的类UImanager 中没有create，则会去找UIManager 的父类Base;
+        这时要看清 Base 的create函数中setmetatable的元表是谁,是 UIManager 还是Base
+     5 不能把 module 函数写在别的文件中，如果在别的文件中做成函数，在本文件中进行调用，环境是不起作用的。
 ]]
 
 

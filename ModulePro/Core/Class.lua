@@ -1,0 +1,3 @@
+local modname = ...
+local M = __createModule(modname);
+
