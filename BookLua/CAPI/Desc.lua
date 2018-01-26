@@ -139,10 +139,11 @@ print("res = ", XXX.mysin(1))
 
 
 Desc = [[
-    table 的 C操作:
+    table数组 的 C操作:
     lua_rawgeti(L, index, key);  将栈中index位置的表数据中的key项 入栈
         相当于:lua_pushnumber(L, key); lua_rawget(L, t)
     lua_rawseti(L, index, key);  设置index位置的表的key项数据
+        数据一定是在栈顶，key在数据下边
         相当于:lua_pushnumber(L, key); lua_insert(L, -2);lua_rawset(L, t)
 
     string 的 C操作:
@@ -159,6 +160,92 @@ Desc = [[
     luaL_pushresult(&b);    弹出结果
 
     void luaL_addvalue(&B)   将栈顶的值加入缓冲
+
+
+]]
+
+
+Desc_UserData = [[
+    userdata 提供了一块原始的内存区域
+
+    lua_newuserdata 会根据指定的大小分配一块内存, 并将对应的userdata压入站中
+        返回内存块的地址
+        void * lua_newuserdata(lua_State * L, size_t size);
+
+    如果需要其他机制分配内存，则可以创建一个指针大小的userdata，在userdata中保存真正的内存地址
+
+    例如 :
+    a = (NumArray*)lua_newuserdata(L, nbytes);
+
+
+    通过userdata的元表来区别不同的userdata。
+
+    int luaL_newnetatable(L, strname); 创建元表，放入栈顶
+    void luaL_getmetatable(L, strname);
+    void *luaL_checkudata(L, index, strname) 检测指定位置上是否是uerdata，
+        并且有 给定名称的元表
+    通过元表来 区别 userdata：
+    1、在注册函数中 创建元表
+        extern "C" __declspec(dllexport)
+        int luaopen_myarray(lua_State * L)
+        {
+            ...
+            luaL_newmetatable(L, "LuaBook.myarray");
+            ...
+        }
+    2、在创建数组时 设置元表
+        //因为这里又入栈了一个table，所以 lua_setmetatable 的参数是 -2
+        luaL_getmetatable(L, "LuaBook.myarray");
+        lua_setmetatable(L, -2);
+    3、通过函数来 检测是否是userdata和是否元表对的上
+        (NumArray*)luaL_checkudata(L, 1, "LuaBook.myarray");
+
+
+    将userdata变成对象
+    __index 元方法，userdata没有key，所以每次访问时都会调用到它
+
+    1 设置两个函数表
+        static const struct luaL_Reg arraylib_f[] = {
+            {"new", l_newarray},
+            {NULL, NULL}
+        };
+
+        static const struct luaL_Reg arraylib_m[] = {
+            {"set", l_setarray},
+            {"get", l_getarray},
+            {"size", l_getarraysize},
+            {"__tostring", l_array2string},
+            {NULL, NULL}
+        };
+    2 在luaopen_XXX中:
+        luaL_newmetatable(L, "MyArray"); //创建元表
+        lua_pushvalue(L, -1);   // 赋值元表，现在-1,-2 中全是table
+        lua_setfield(L, -2, "__index"); //将 -2 中的__index 项设置为 -1中的tabele，即,tab.__index = tab;
+        //如果NULL为库名，则注册的函数不在 函数table中，而在栈顶的table中
+        luaL_register(L, NULL, arraylib_m); // 元方法的函数注册在 -1的表中
+        luaL_register(L, "array", arraylib_f); //模块的函数
+    3 在new中 还是要设置元表
+
+
+    数组方式访问元素:
+    static const struct luaL_Reg arraylib_m[] = {
+        {"__newindex", l_setarray},
+        {"__index", l_getarray},
+        {"__len", l_getarraysize},
+        {"__tostring", l_array2string},
+        {NULL, NULL}
+    };
+    同一个方法 被多次注册：
+        { "get", l_getarray },
+        {"getvalue", l_getarray},
+        { "__index", l_getarray },
+        没有__index 时两个都能用，存在 __index时，只能用__index
+
+
+    轻量级userdata 只存放了一个c指针，void*
+    void lua_pushlightuserdata(lua_State* L, void*p)
+    不接受 垃圾收集
+    主要用途 相等性比较
 
 
 ]]
