@@ -1,8 +1,5 @@
 local Base = require "Core.Base";
-local M = __getModule(...);
-if  M ~= nil then
-    return M; 
-end
+local M;
 -- 创建模块
 module(..., package.seeall)
 M = __getModule(...);
@@ -34,3 +31,5 @@ end
 function GetValue(obj)
     return obj.value;
 end
+
+print("======UIManager Load...======")

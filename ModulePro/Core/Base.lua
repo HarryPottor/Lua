@@ -1,10 +1,7 @@
 
 local Class = require "Core.Class"
 
-local M = __getModule(...);
-if  M ~= nil then
-    return M; 
-end
+local M;
 -- 创建模块
 module(..., package.seeall)
 M = __getModule(...);
@@ -12,18 +9,18 @@ M.__index = M
 setmetatable(M, Class);
 M.__metatable = tostring(Class);
 
-function Create(obj, ...)
+function M:Create(...)
     print("Create------------------")
-    local newobj = setmetatable({}, obj);
+    local newobj = setmetatable({}, self);
     newobj:Init(...);
     return newobj;
 end
 
-function Init(obj, name)
+function M:Init(name)
     print("Init------------------")
-    obj.name = name;
+    self.name = name;
 end
 
-function ShowName(obj)
-    return print(obj.name);
+function M:ShowName()
+    return print(self.name);
 end
