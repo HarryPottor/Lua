@@ -8,7 +8,6 @@ setmetatable(M, Base);
 M.__metatable = tostring(Base);
 
 function Init(obj)
-    print("===================")
     obj.name = "";
     obj.info = "";
     obj.value = 0;
@@ -32,4 +31,3 @@ function GetValue(obj)
     return obj.value;
 end
 
-print("======UIManager Load...======")

@@ -10,14 +10,12 @@ setmetatable(M, Class);
 M.__metatable = tostring(Class);
 
 function M:Create(...)
-    print("Create------------------")
     local newobj = setmetatable({}, self);
     newobj:Init(...);
     return newobj;
 end
 
 function M:Init(name)
-    print("Init------------------")
     self.name = name;
 end
 

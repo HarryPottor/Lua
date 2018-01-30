@@ -1,11 +1,19 @@
 require "Tool.Tool"
-local UIManager = require "Module.UI.UIManager"
-local SystemManager = require "Module.System.SystemManager"
+local SysLogin = require "Module.System.Login.SysLogin";
 
+local login = SysLogin:Create();
+local input = io.read();
+while(input ~= nil) do
+    if  input == "show" then
+        login:show();
+    elseif input == "hide" then
+        login:hide();
+    elseif input == "send" then
+        login:SendToServer();
+    elseif input == "quit" then
+        break;
+    end
 
-local objUI = UIManager:Create();
+    input = io.read();
+end
 
-local objSys = SystemManager:Create(objUI);
-
-objUI:SetData("Lucy", "This is a girl!", 12);
-objSys:SendToServer();

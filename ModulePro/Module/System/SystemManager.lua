@@ -10,8 +10,6 @@ setmetatable(M, Base);
 M.__metatable = tostring(Base);
 
 function M:Init(uiobj)
-    print("-----------------------")
-    print(debug.traceback())
     self.objUI = uiobj;
 end
 
